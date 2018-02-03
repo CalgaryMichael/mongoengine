@@ -1,5 +1,7 @@
 from mongoengine.common import _import_class
 from mongoengine.connection import DEFAULT_CONNECTION_NAME, get_db
+from pymongo.write_concern import WriteConcern
+from contextlib import contextmanager
 
 
 __all__ = ('switch_db', 'switch_collection', 'no_dereference',
@@ -215,3 +217,10 @@ class query_counter(object):
         count = self.db.system.profile.find(ignore_query).count() - self.counter
         self.counter += 1
         return count
+
+
+@contextmanager
+def set_write_concern(collection, write_concerns):
+    yield collection.with_options(write_concern=WriteConcern(
+        **dict(collection.write_concern.document.items()),
+        **write_concerns))

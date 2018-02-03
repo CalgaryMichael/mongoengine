@@ -9,6 +9,7 @@ from nose.plugins.skip import SkipTest
 import pymongo
 from pymongo.errors import ConfigurationError
 from pymongo.read_preferences import ReadPreference
+from pymongo.results import UpdateResult
 import six
 
 from mongoengine import *
@@ -394,7 +395,7 @@ class QuerySetTest(unittest.TestCase):
         """Test that passing write_concern works"""
         self.Person.drop_collection()
 
-        write_concern = {"fsync": True}
+        write_concern = {"fsync": True, "j": False}
 
         author = self.Person.objects.create(name='Test User')
         author.save(write_concern=write_concern)
@@ -656,14 +657,14 @@ class QuerySetTest(unittest.TestCase):
 
         result = self.Person(name="Bob", age=25).update(
             upsert=True, full_result=True)
-        self.assertTrue(isinstance(result, dict))
-        self.assertTrue("upserted" in result)
-        self.assertFalse(result["updatedExisting"])
+        self.assertTrue(isinstance(result, UpdateResult))
+        self.assertTrue("upserted" in result.raw_result)
+        self.assertFalse(result.raw_result["updatedExisting"])
 
         bob = self.Person.objects.first()
         result = bob.update(set__age=30, full_result=True)
-        self.assertTrue(isinstance(result, dict))
-        self.assertTrue(result["updatedExisting"])
+        self.assertTrue(isinstance(result, UpdateResult))
+        self.assertTrue(result.raw_result["updatedExisting"])
 
         self.Person(name="Bob", age=20).save()
         result = self.Person.objects(name="Bob").update(
